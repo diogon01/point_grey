@@ -11,43 +11,38 @@ ImageConverter::~ImageConverter() {
 void ImageConverter::imageCb(const sensor_msgs::ImageConstPtr& msg_left_image,
                              const sensor_msgs::ImageConstPtr& msg_right_image, const sensor_msgs::NavSatFixConstPtr& msg_gps,
                              const sensor_msgs::NavSatFixConstPtr& msg_rtk, const sensor_msgs::ImuConstPtr& msg_imu) {
-    
-    cv_bridge::CvImagePtr cv_ptr;
-    msg_image = msg_left_image;
-    msg_image_mono = msg_right_image;
-    try {
-        cv_ptr = cv_bridge::toCvCopy(msg_left_image, sensor_msgs::image_encodings::BGR8);
-    } catch (cv_bridge::Exception& e) {
-        ROS_ERROR("cv_bridge exception: %s", e.what());
-        return;
-    }
-    // Draw an example circle on the video stream
-    if (cv_ptr->image.rows > 60 && cv_ptr->image.cols > 60)
-        cv::circle(cv_ptr->image, cv::Point(50, 50), 10, CV_RGB(255, 0, 0));
-
-    /*   // Output modified video stream
-    image_pub_.publish(cv_ptr->toImageMsg()); */
+    ptr_image_left_ = msg_left_image;
+    ptr_image_right_ = msg_right_image;
+    ptr_gps_position_ = msg_gps;
+    ptr_rtk_position_ = msg_rtk;
+    ptr_imu_ = msg_imu;
 }
 
 bool ImageConverter::serviceCB(point_grey::PointGray::Request& req,
                                point_grey::PointGray::Response& res) {
-    cv_bridge::CvImagePtr cv_ptr;
+    cv_bridge::CvImagePtr cv_ptr_L;
+    cv_bridge::CvImagePtr cv_ptr_R;
     file_path_ = req.file_path;
+    std::string file_name_ = req.file_name; 
 
     try {
         std::ofstream file;
-        file.open(file_path_, std::ios::out | std::ios::app);
+        file.open(file_path_ + file_name_, std::ios::out | std::ios::app);
         if (file.fail()) {
             res.result = false;
             //throw std::ios_base::failure(std::strerror(errno));
         }
-        cv_ptr = cv_bridge::toCvCopy(msg_image, sensor_msgs::image_encodings::BGR8);
+        cv_ptr_L = cv_bridge::toCvCopy(ptr_image_left_, sensor_msgs::image_encodings::BGR8);
+        cv_ptr_R = cv_bridge::toCvCopy(ptr_image_right_, sensor_msgs::image_encodings::BGR8);
 
-        cv::imwrite("teste.png", cv_ptr->image);
-        ;
+        file << "something you want to add to your outputfile" << std::endl;
+
+        cv::imwrite(file_path_ + "_image_left.png", cv_ptr_L->image);
+        cv::imwrite(file_path_ + "_image_right.png", cv_ptr_L->image);
         // Update GUI Window
-        cv::imshow(OPENCV_WINDOW, cv_ptr->image);
         cv::waitKey(3);
+
+        file.close();
 
     } catch (cv_bridge::Exception& e) {
         ROS_ERROR("cv_bridge exception: %s", e.what());
@@ -59,10 +54,26 @@ bool ImageConverter::serviceCB(point_grey::PointGray::Request& req,
     return res.result;
 }
 
+bool ImageConverter::serviceListFolders(point_grey::ListFolders::Request& req,
+                                        point_grey::ListFolders::Response& res) {
+    
+    std::vector<std::string> r;
+    for(auto& p : std::filesystem::recursive_directory_iterator(req.file_path))
+        if (p.is_directory())
+            r.push_back(p.path().string());
+
+    res.directory_names = r;
+    res.result = true;
+    return true;
+}
+
 void ImageConverter::initServices(ros::NodeHandle& nh) {
     try {
         point_grey_srv_ = nh_.advertiseService("point_grey/take_picture", &ImageConverter::serviceCB, this);
         ROS_INFO("Service point_grey/take_picture initialize");
+        list_folder_srv_ = nh_.advertiseService("point_grey/list_folders", &ImageConverter::serviceListFolders, this);
+        ROS_INFO("Service point_grey/list_folders initialize");
+
     } catch (ros::Exception& e) {
         ROS_ERROR("Subscribe topics exception: %s", e.what());
     }

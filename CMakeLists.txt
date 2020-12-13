@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.0.2)
 project(point_grey)
 
 ## Compile as C++11, supported in ROS Kinetic and newer
-# add_compile_options(-std=c++11)
+add_compile_options(-std=c++17)
 
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
@@ -61,6 +61,7 @@ find_package(catkin REQUIRED COMPONENTS
 add_service_files(
   FILES
   PointGray.srv
+  ListFolders.srv
 )
 ## Generate actions in the 'action' folder
 # add_action_files(

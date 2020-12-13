@@ -11,9 +11,11 @@
 #include <message_filters/time_synchronizer.h>
 #include <message_filters/sync_policies/approximate_time.h>
 #include <point_grey/PointGray.h>
+#include <point_grey/ListFolders.h>
 #include <ios>
 #include <fstream>
 #include <string>
+#include <filesystem>
 
 static const std::string OPENCV_WINDOW = "Image window";
 
@@ -26,10 +28,14 @@ class ImageConverter {
     message_filters::Subscriber<sensor_msgs::NavSatFix> rtk_position_sub_;
     message_filters::Subscriber<sensor_msgs::Imu> imu_sub_;
     ros::ServiceServer point_grey_srv_;
+    ros::ServiceServer list_folder_srv_;
     std::string file_path_;
 
-    sensor_msgs::ImageConstPtr msg_image;
-    sensor_msgs::ImageConstPtr msg_image_mono;
+    sensor_msgs::ImageConstPtr ptr_image_left_;
+    sensor_msgs::ImageConstPtr ptr_image_right_;
+    sensor_msgs::NavSatFixConstPtr ptr_gps_position_;
+    sensor_msgs::NavSatFixConstPtr ptr_rtk_position_;
+    sensor_msgs::ImuConstPtr ptr_imu_;
 
     typedef message_filters::sync_policies::ApproximateTime<sensor_msgs::Image, sensor_msgs::Image,
                                                             sensor_msgs::NavSatFix, sensor_msgs::NavSatFix, sensor_msgs::Imu>
@@ -48,4 +54,9 @@ class ImageConverter {
 
     bool serviceCB(point_grey::PointGray::Request& req,
                    point_grey::PointGray::Response& res);
+
+    bool serviceListFolders(point_grey::ListFolders::Request& req,
+                   point_grey::ListFolders::Response& res);
+
+    std::vector<std::string> get_directories(const std::string& s);
 };
