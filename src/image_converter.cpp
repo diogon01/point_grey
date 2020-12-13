@@ -1,20 +1,12 @@
 #include <image_converter.hh>
 
-ImageConverter::ImageConverter() : it_(nh_),
-                                   image_sub_(nh_, "/camera/image_raw", 1),
-                                   image_mono_(nh_, "/camera/image_mono", 1),
-                                   sync_(PontGreyPolicy(100), image_sub_, image_mono_) {
-    // Subscrive to input video feed and publish output video feed
-    image_pub_ = it_.advertise("/image_converter/output_video", 1);
-    point_grey_srv_ = nh_.advertiseService("point_grey/take_picture", &ImageConverter::serviceCB, this);
+ImageConverter::ImageConverter() {
 
-    sync_.registerCallback(boost::bind(&ImageConverter::imageCb, this, _1, _2));
-
-    cv::namedWindow(OPENCV_WINDOW);
+    initSubscriber(nh_);
+    initServices(nh_);
 }
 
 ImageConverter::~ImageConverter() {
-    cv::destroyWindow(OPENCV_WINDOW);
 }
 
 void ImageConverter::imageCb(const sensor_msgs::ImageConstPtr& msg, const sensor_msgs::ImageConstPtr& msg_mono) {
@@ -64,11 +56,25 @@ bool ImageConverter::serviceCB(point_grey::PointGray::Request& req,
     return res.result;
 }
 
-bool ImageConverter::initSubscriber(ros::NodeHandle& nh) {
-    image_sub_.subscribe(nh, "/camera/image_raw", 1);
-    image_mono_.subscribe(nh, "/camera/image_mono", 1);
-    
-    sync_2.reset(new Sync(PontGreyPolicy(100), image_sub_, image_mono_));
-    sync_2->registerCallback(boost::bind(&ImageConverter::imageCb, this, _1, _2));
-    return true;
+void ImageConverter::initServices(ros::NodeHandle& nh) {
+    try{
+        point_grey_srv_ = nh_.advertiseService("point_grey/take_picture", &ImageConverter::serviceCB, this);
+        ROS_INFO("Service point_grey/take_picture initialize");
+    }catch(ros::Exception &e){
+        ROS_ERROR("Subscribe topics exception: %s", e.what());
+    }
+
+}
+
+void ImageConverter::initSubscriber(ros::NodeHandle& nh) {
+     try{
+        image_sub_.subscribe(nh_, "/stereo/left/image_mono", 1);
+        image_mono_.subscribe(nh_, "/stereo/right/image_mono", 1);
+        sync_.reset(new Sync(PointGreyPolicy(10), image_sub_, image_mono_));
+        sync_->registerCallback(boost::bind(&ImageConverter::imageCb, this, _1, _2));
+
+        ROS_INFO("Subscribe complet");
+    }catch(ros::Exception &e){
+        ROS_ERROR("Subscribe topics exception: %s", e.what());
+    }
 }

@@ -25,6 +25,12 @@
                     "ignoreFailures": true
                 }
             ]
-        }
+        },
+        {
+            "name": "ROS: Launch",
+            "type": "ros",
+            "request": "launch",
+            "target": "/home/diogo/catkin_ws/src/point_grey/launch/point_grey.launch"
+        },
     ]
 }

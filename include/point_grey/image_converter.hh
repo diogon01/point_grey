@@ -14,31 +14,29 @@
 #include <string>
 
 static const std::string OPENCV_WINDOW = "Image window";
-typedef message_filters::sync_policies::ApproximateTime<sensor_msgs::Image, sensor_msgs::Image> PontGreyPolicy;
-typedef message_filters::Synchronizer<PontGreyPolicy> Sync;
 
 class ImageConverter {
    private:
     ros::NodeHandle nh_;
-    image_transport::ImageTransport it_;
     message_filters::Subscriber<sensor_msgs::Image> image_sub_;
     message_filters::Subscriber<sensor_msgs::Image> image_mono_;
-    image_transport::Publisher image_pub_;
     ros::ServiceServer point_grey_srv_;
     std::string file_path_;
 
     sensor_msgs::ImageConstPtr msg_image;
     sensor_msgs::ImageConstPtr msg_image_mono;
 
-    message_filters::Synchronizer<PontGreyPolicy> sync_;
-    boost::shared_ptr<Sync> sync_2;
+      typedef message_filters::sync_policies::ApproximateTime<sensor_msgs::Image, sensor_msgs::Image> PointGreyPolicy;
+      typedef message_filters::Synchronizer<PointGreyPolicy> Sync;
+      boost::shared_ptr<Sync> sync_;
 
-   public:
-    ImageConverter();
-    ~ImageConverter();
-    bool initSubscriber(ros::NodeHandle& nh);
-    void imageCb(const sensor_msgs::ImageConstPtr& msg, const sensor_msgs::ImageConstPtr& msg_mono);
+     public:
+      ImageConverter();
+      ~ImageConverter();
+      void initSubscriber(ros::NodeHandle& nh);
+      void initServices(ros::NodeHandle& nh);
+      void imageCb(const sensor_msgs::ImageConstPtr& msg, const sensor_msgs::ImageConstPtr& msg_mono);
 
-    bool serviceCB(point_grey::PointGray::Request& req,
-                   point_grey::PointGray::Response& res);
+      bool serviceCB(point_grey::PointGray::Request& req,
+                     point_grey::PointGray::Response& res);
 };

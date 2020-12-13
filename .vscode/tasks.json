@@ -40,6 +40,16 @@
             "label": "release",
             "type": "shell",
             "command": "sudo checkinstall --install=no catkin build -j4 --cmake--args -DCMAKE_BUILD_TYPE=Release"
+        },
+        {
+            "label": "roscore",
+            "type": "shell",
+            "command": "roscore",
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "problemMatcher": []
         }
     ]
 }

@@ -1,13 +1,13 @@
 <launch>
-<arg name="gps_topic" default="/dji_sdk/gps_position" />
-<arg name="rtk_topic" default="/dji_sdk/rtk_position" />
-<arg name="camera_left_topic" default="/stereo/left/image_raw" />
-<arg name="camera_right_topic" default="/stereo/right/image_raw" />
+    <arg name="gps_topic" default="/dji_sdk/gps_position" />
+    <arg name="rtk_topic" default="/dji_sdk/rtk_position" />
+    <arg name="camera_left_topic" default="/stereo/left/image_raw" />
+    <arg name="camera_right_topic" default="/stereo/right/image_raw" />
 
-<node pkg="point_grey" type="point_grey_node" name="point_grey" output="screen">
-<param name="gps_topic" type="string" value="$(arg gps_topic)" />
-<param name="rtk_topic" type="string" value="$(arg rtk_topic)" />
-<param name="camera_left_topic" type="string" value="$(arg camera_left_topic)" />
-<param name="camera_right_topic" type="string" value="$(arg camera_right_topic)" />
-</node>
+    <node pkg="point_grey" type="point_grey_node" name="point_grey" output="screen">
+        <param name="gps_topic" type="string" value="$(arg gps_topic)" />
+        <param name="rtk_topic" type="string" value="$(arg rtk_topic)" />
+        <param name="camera_left_topic" type="string" value="$(arg camera_left_topic)" />
+        <param name="camera_right_topic" type="string" value="$(arg camera_right_topic)" />
+    </node>
 </launch>
