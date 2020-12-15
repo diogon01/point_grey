@@ -23,7 +23,7 @@ bool ImageConverter::serviceCB(point_grey::PointGray::Request& req,
     cv_bridge::CvImagePtr cv_ptr_L;
     cv_bridge::CvImagePtr cv_ptr_R;
     file_path_ = req.file_path;
-    std::string file_name_ = req.file_name; 
+    std::string file_name_ = req.file_name;
 
     try {
         std::ofstream file;
@@ -56,9 +56,8 @@ bool ImageConverter::serviceCB(point_grey::PointGray::Request& req,
 
 bool ImageConverter::serviceListFolders(point_grey::ListFolders::Request& req,
                                         point_grey::ListFolders::Response& res) {
-    
     std::vector<std::string> r;
-    for(auto& p : std::filesystem::recursive_directory_iterator(req.file_path))
+    for (auto& p : std::filesystem::recursive_directory_iterator(req.file_path))
         if (p.is_directory())
             r.push_back(p.path().string());
 
@@ -81,11 +80,25 @@ void ImageConverter::initServices(ros::NodeHandle& nh) {
 
 void ImageConverter::initSubscriber(ros::NodeHandle& nh) {
     try {
-        image_left_sub_.subscribe(nh, "/stereo/left/image_mono", 1);
-        image_right_sub_.subscribe(nh, "/stereo/right/image_mono", 1);
-        gps_position_sub_.subscribe(nh, "/dji_sdk/gps_position", 1);
-        rtk_position_sub_.subscribe(nh, "/dji_sdk/rtk_position", 1);
-        imu_sub_.subscribe(nh, "/dji_sdk/imu", 1);
+        ros::NodeHandle nh_private("~");
+
+        std::string left_topic_, right_topic_, gps_topic_, rtk_topic_, imu_topic_;
+        nh_private.param("camera_left_topic", left_topic_, std::string("/stereo/left/image_raw"));
+        nh_private.param("camera_right_topic", right_topic_, std::string("/stereo/right/image_raw"));
+        nh_private.param("gps_topic", gps_topic_, std::string("/dji_sdk/gps_position"));
+        nh_private.param("rtk_topic", rtk_topic_, std::string("/dji_sdk/rtk_position"));
+        nh_private.param("imu_topic", imu_topic_, std::string("/dji_sdk/imu"));
+
+        image_left_sub_.subscribe(nh, left_topic_, 1);
+        ROS_INFO("Subscriber in Camera Left Topic: %s", left_topic_.c_str());
+        image_right_sub_.subscribe(nh, right_topic_, 1);
+        ROS_INFO("Subscriber in Camera Right Topic: %s", right_topic_.c_str());
+        gps_position_sub_.subscribe(nh, gps_topic_, 1);
+        ROS_INFO("Subscriber in Camera GPS Topic: %s", gps_topic_.c_str());
+        rtk_position_sub_.subscribe(nh, rtk_topic_, 1);
+        ROS_INFO("Subscriber in Camera RTK Topic: %s", rtk_topic_.c_str());
+        imu_sub_.subscribe(nh, imu_topic_, 1);
+        ROS_INFO("Subscriber in Camera IMU Topic: %s", imu_topic_.c_str());
 
         sync_.reset(new Sync(PointGreyPolicy(10), image_left_sub_, image_right_sub_, gps_position_sub_, rtk_position_sub_, imu_sub_));
         sync_->registerCallback(boost::bind(&ImageConverter::imageCb, this, _1, _2, _3, _4, _5));
