@@ -24,6 +24,7 @@ bool ImageConverter::serviceCB(point_grey::PointGray::Request& req,
     cv_bridge::CvImagePtr cv_ptr_R;
     file_path_ = req.file_path;
     std::string file_name_ = req.file_name;
+    counter_ = req.reset_counter ? 0 : counter_;
 
     try {
         std::ofstream file;
@@ -35,14 +36,24 @@ bool ImageConverter::serviceCB(point_grey::PointGray::Request& req,
         cv_ptr_L = cv_bridge::toCvCopy(ptr_image_left_, sensor_msgs::image_encodings::BGR8);
         cv_ptr_R = cv_bridge::toCvCopy(ptr_image_right_, sensor_msgs::image_encodings::BGR8);
 
-        file << "something you want to add to your outputfile" << std::endl;
-
-        cv::imwrite(file_path_ + "_image_left.png", cv_ptr_L->image);
-        cv::imwrite(file_path_ + "_image_right.png", cv_ptr_L->image);
+        cv::imwrite(file_path_ + "image_left_" + std::to_string(counter_) + ".png", cv_ptr_L->image);
+        cv::imwrite(file_path_ + "image_right_" + std::to_string(counter_) + ".png", cv_ptr_R->image);
         // Update GUI Window
-        cv::waitKey(3);
+
+        file << "image_left_" + std::to_string(counter_) + ".png"
+             << "\t"
+             << "image_right_" + std::to_string(counter_) + ".png"
+             << "\t"
+             << ptr_gps_position_->longitude << "\t"
+             << ptr_gps_position_->latitude << "\t"
+             << ptr_gps_position_->altitude << "\t"
+             << ptr_rtk_position_->longitude << "\t"
+             << ptr_rtk_position_->latitude << "\t"
+             << ptr_rtk_position_->altitude << "\t"
+             << std::endl;
 
         file.close();
+        counter_++;
 
     } catch (cv_bridge::Exception& e) {
         ROS_ERROR("cv_bridge exception: %s", e.what());

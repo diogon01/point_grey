@@ -17,8 +17,6 @@
 #include <string>
 #include <filesystem>
 
-static const std::string OPENCV_WINDOW = "Image window";
-
 class ImageConverter {
    private:
     ros::NodeHandle nh_;
@@ -42,6 +40,8 @@ class ImageConverter {
         PointGreyPolicy;
     typedef message_filters::Synchronizer<PointGreyPolicy> Sync;
     boost::shared_ptr<Sync> sync_;
+
+    unsigned int counter_ = 0;
 
    public:
     ImageConverter();
