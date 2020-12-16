@@ -16,6 +16,7 @@
 #include <fstream>
 #include <string>
 #include <filesystem>
+#include <ignition/math2/ignition/math/Pose3.hh>
 
 class ImageConverter {
    private:

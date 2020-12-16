@@ -122,6 +122,9 @@ include_directories(
 )
 
 include_directories(include/${PROJECT_NAME}/)
+set(CMAKE_CXX_TARGET_INCLUDE_PATH
+        "/usr/include/ignition/math2")
+
 
 ## Declare a C++ library
 add_library(ImageConverterLib src/image_converter.cpp ${catkin_LIBRARIES})

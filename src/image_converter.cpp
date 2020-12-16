@@ -1,16 +1,19 @@
 #include <image_converter.hh>
 
-ImageConverter::ImageConverter() {
+ImageConverter::ImageConverter()
+{
     initSubscriber(nh_);
     initServices(nh_);
 }
 
-ImageConverter::~ImageConverter() {
+ImageConverter::~ImageConverter()
+{
 }
 
-void ImageConverter::imageCb(const sensor_msgs::ImageConstPtr& msg_left_image,
-                             const sensor_msgs::ImageConstPtr& msg_right_image, const sensor_msgs::NavSatFixConstPtr& msg_gps,
-                             const sensor_msgs::NavSatFixConstPtr& msg_rtk, const sensor_msgs::ImuConstPtr& msg_imu) {
+void ImageConverter::imageCb(const sensor_msgs::ImageConstPtr &msg_left_image,
+                             const sensor_msgs::ImageConstPtr &msg_right_image, const sensor_msgs::NavSatFixConstPtr &msg_gps,
+                             const sensor_msgs::NavSatFixConstPtr &msg_rtk, const sensor_msgs::ImuConstPtr &msg_imu)
+{
     ptr_image_left_ = msg_left_image;
     ptr_image_right_ = msg_right_image;
     ptr_gps_position_ = msg_gps;
@@ -18,18 +21,25 @@ void ImageConverter::imageCb(const sensor_msgs::ImageConstPtr& msg_left_image,
     ptr_imu_ = msg_imu;
 }
 
-bool ImageConverter::serviceCB(point_grey::PointGray::Request& req,
-                               point_grey::PointGray::Response& res) {
+bool ImageConverter::serviceCB(point_grey::PointGray::Request &req,
+                               point_grey::PointGray::Response &res)
+{
     cv_bridge::CvImagePtr cv_ptr_L;
     cv_bridge::CvImagePtr cv_ptr_R;
     file_path_ = req.file_path;
     std::string file_name_ = req.file_name;
     counter_ = req.reset_counter ? 0 : counter_;
 
-    try {
+    ignition::math::Quaterniond rpy;
+    rpy.Set(ptr_imu_->orientation.w, ptr_imu_->orientation.x, ptr_imu_->orientation.y, ptr_imu_->orientation.z);
+
+
+    try
+    {
         std::ofstream file;
         file.open(file_path_ + file_name_, std::ios::out | std::ios::app);
-        if (file.fail()) {
+        if (file.fail())
+        {
             res.result = false;
             //throw std::ios_base::failure(std::strerror(errno));
         }
@@ -40,22 +50,28 @@ bool ImageConverter::serviceCB(point_grey::PointGray::Request& req,
         cv::imwrite(file_path_ + "image_right_" + std::to_string(counter_) + ".png", cv_ptr_R->image);
         // Update GUI Window
 
-        file << "image_left_" + std::to_string(counter_) + ".png"
+        //std::scientific;
+
+        file << std::defaultfloat << "image_left_" + std::to_string(counter_) + ".png"
              << "\t"
              << "image_right_" + std::to_string(counter_) + ".png"
              << "\t"
-             << ptr_gps_position_->longitude << "\t"
-             << ptr_gps_position_->latitude << "\t"
-             << ptr_gps_position_->altitude << "\t"
-             << ptr_rtk_position_->longitude << "\t"
-             << ptr_rtk_position_->latitude << "\t"
-             << ptr_rtk_position_->altitude << "\t"
+             << std::setprecision(20) << ptr_gps_position_->longitude << "\t"
+             << std::setprecision(20) << ptr_gps_position_->latitude << "\t"
+             << std::setprecision(20) << ptr_gps_position_->altitude << "\t"
+             << std::setprecision(20) << ptr_rtk_position_->longitude << "\t"
+             << std::setprecision(20) << ptr_rtk_position_->latitude << "\t"
+             << std::setprecision(20) << ptr_rtk_position_->altitude << "\t"
+             << std::setprecision(20) << rpy.Roll() << "\t"
+             << std::setprecision(20) << rpy.Pitch() << "\t"
+             << std::setprecision(20) << rpy.Yaw() << "\t"
              << std::endl;
 
         file.close();
         counter_++;
-
-    } catch (cv_bridge::Exception& e) {
+    }
+    catch (cv_bridge::Exception &e)
+    {
         ROS_ERROR("cv_bridge exception: %s", e.what());
         res.result = false;
         return res.result;
@@ -65,10 +81,11 @@ bool ImageConverter::serviceCB(point_grey::PointGray::Request& req,
     return res.result;
 }
 
-bool ImageConverter::serviceListFolders(point_grey::ListFolders::Request& req,
-                                        point_grey::ListFolders::Response& res) {
+bool ImageConverter::serviceListFolders(point_grey::ListFolders::Request &req,
+                                        point_grey::ListFolders::Response &res)
+{
     std::vector<std::string> r;
-    for (auto& p : std::filesystem::recursive_directory_iterator(req.file_path))
+    for (auto &p : std::filesystem::recursive_directory_iterator(req.file_path))
         if (p.is_directory())
             r.push_back(p.path().string());
 
@@ -77,20 +94,25 @@ bool ImageConverter::serviceListFolders(point_grey::ListFolders::Request& req,
     return true;
 }
 
-void ImageConverter::initServices(ros::NodeHandle& nh) {
-    try {
+void ImageConverter::initServices(ros::NodeHandle &nh)
+{
+    try
+    {
         point_grey_srv_ = nh_.advertiseService("point_grey/take_picture", &ImageConverter::serviceCB, this);
         ROS_INFO("Service point_grey/take_picture initialize");
         list_folder_srv_ = nh_.advertiseService("point_grey/list_folders", &ImageConverter::serviceListFolders, this);
         ROS_INFO("Service point_grey/list_folders initialize");
-
-    } catch (ros::Exception& e) {
+    }
+    catch (ros::Exception &e)
+    {
         ROS_ERROR("Subscribe topics exception: %s", e.what());
     }
 }
 
-void ImageConverter::initSubscriber(ros::NodeHandle& nh) {
-    try {
+void ImageConverter::initSubscriber(ros::NodeHandle &nh)
+{
+    try
+    {
         ros::NodeHandle nh_private("~");
 
         std::string left_topic_, right_topic_, gps_topic_, rtk_topic_, imu_topic_;
@@ -115,7 +137,9 @@ void ImageConverter::initSubscriber(ros::NodeHandle& nh) {
         sync_->registerCallback(boost::bind(&ImageConverter::imageCb, this, _1, _2, _3, _4, _5));
 
         ROS_INFO("Subscribe complet");
-    } catch (ros::Exception& e) {
+    }
+    catch (ros::Exception &e)
+    {
         ROS_ERROR("Subscribe topics exception: %s", e.what());
     }
 }
